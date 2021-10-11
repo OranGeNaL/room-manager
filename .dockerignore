@@ -1,0 +1,4 @@
+Dockerfile
+start_template.sh
+.gitignore
+.dockerignore
