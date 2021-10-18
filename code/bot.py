@@ -5,55 +5,34 @@ import json
 from requests import get
 from wakeonlan import send_magic_packet
 
-# bot = telebot.TeleBot(os.environ.get("TELEGRAM_KEY"))
+
+subs = []
+pending_subs = []
 
 
-# subs = []
-# pending_subs = []
-# print("work13")
-
-#получение глобального ip
-# print(get("https://api.ipify.org").text)
-# print(os.environ.get("MAC_ADDRESS"))
-# os.system("wakeonlan " + os.environ.get("MAC_ADDRESS"))
-# send_magic_packet(os.environ.get("MAC_ADDRESS"))
-
-
-# print(os.environ.get("TELEGRAM_KEY"))
-# print(os.environ.get("MAC_ADDRESS"))
-
-# def main():
-#     print("work43")
-#     read_cache_subs()
-#     bot.polling(none_stop=True, interval=0)
-
-def cache_subs():
+def cache_subs(a):
     json_note = ""
-    if len(subs) != 0:
+    if len(a) != 0:
         print("Записываю подписчиков в файл")
-        json_note = json.dumps(subs)
+        json_note = json.dumps(a)
     file = open("/app/volume/subs.json", "w")
     file.write(json_note)
     file.close()
 
-def read_cache_subs():
+def read_cache_subs(a):
     file = open("/app/volume/subs.json", "r")
     json_note = file.read()
     print("Подписчики: " + json_note)
     if len(json_note) > 0:
-        subs = json.loads(json_note)
+        for i in json.loads(json_note):
+            a.append(i)
+        print(a)
 
     
 
-# try:
+read_cache_subs(subs)
+print(subs)
 
-# except FileNotFoundError:
-    # cache_subs()
-subs = []
-pending_subs = []
-print("work13")
-print("work43")
-read_cache_subs()
 
 
 bot = telebot.TeleBot(os.environ.get("TELEGRAM_KEY"))
@@ -81,10 +60,25 @@ def get_text_messages(message):
         if message.from_user.id in subs:
             subs_string = ""
             for i in subs:
-                subs_string += str(i) + "\n"
+                UsrInfo = bot.get_chat_member(i, i).user
+                subs_string += str(i) + " - " + UsrInfo.username + "\n"
             bot.send_message(message.from_user.id, subs_string)
         else:
             bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
+
+    elif message.text == "/ip":
+        if message.from_user.id in subs:
+            ip = get('https://api.ipify.org').text
+            bot.send_message(message.from_user.id, "Текущий IP сервера:")
+            bot.send_message(message.from_user.id, ip)
+        else:
+            bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
+
+    elif message.text == "/help":
+        bot.send_message(message.from_user.id, """/help  - Помощь
+/sub   - Подписаться
+/subs - Список подписанных пользователей
+/ip      - Получить текущий IP сервера""")
 
 
     elif message.text == os.environ.get("ADMIN_PASSWORD"):
@@ -93,21 +87,11 @@ def get_text_messages(message):
             if message.from_user.id in pending_subs:
                 pending_subs.remove(message.from_user.id)
             bot.send_message(message.from_user.id, "Вы успешно подписаны на обновления")
-            cache_subs()
+            cache_subs(subs)
         
     else:
         bot.send_message(message.from_user.id, "Не понимаю")
 
-
-
-
-
-
-# main()
-# def main():
-# if __name__ == "__main__":
-#     print("work43")
-#     read_cache_subs()
 
 bot.infinity_polling()
 
