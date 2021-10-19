@@ -20,13 +20,18 @@ def cache_subs(a):
     file.close()
 
 def read_cache_subs(a):
-    file = open("/app/volume/subs.json", "r")
-    json_note = file.read()
-    print("Подписчики: " + json_note)
-    if len(json_note) > 0:
-        for i in json.loads(json_note):
-            a.append(i)
-        print(a)
+    try:
+        file = open("/app/volume/subs.json", "r")
+        json_note = file.read()
+        print("Подписчики: " + json_note)
+        if len(json_note) > 0:
+            for i in json.loads(json_note):
+                a.append(i)
+            print(a)
+    except:
+        file = open("/app/volume/subs.json", "w")
+        file.write("")
+        file.close()
 
     
 
