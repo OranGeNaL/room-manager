@@ -8,9 +8,10 @@ from requests import get
 
 subs = []
 pending_subs = []
-#pendingTorrent = [False]
+# pendingTorrent = [False]
 
 pendingTorrent = False
+
 
 def cache_subs(a):
     json_note = ""
@@ -36,10 +37,54 @@ def read_cache_subs(a):
         file.write("")
         file.close()
 
+
 read_cache_subs(subs)
-#print(subs)
+# print(subs)
 
 bot = telebot.TeleBot(os.environ.get("TELEGRAM_KEY"))
+
+
+@bot.message_handler(commands=['start', 'help'])
+def handle_start_help(message):
+    bot.send_message(message.from_user.id, """/help  - Помощь
+/sub   - Подписаться
+/subs  - Список подписанных пользователей
+/ip    - Получить текущий IP сервера""")
+
+
+@bot.message_handler(commands=['subs'])
+def handle_subs(message):
+    if message.from_user.id in subs:
+        subs_string = ""
+        for i in subs:
+            UsrInfo = bot.get_chat_member(i, i).user
+            subs_string += str(i) + " - " + UsrInfo.username + "\n"
+        bot.send_message(message.from_user.id, subs_string)
+    else:
+        bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
+
+
+@bot.message_handler(commands=['ip'])
+def handle_ip(message):
+    if message.from_user.id in subs:
+        ip = get('https://api.ipify.org').text
+        bot.send_message(message.from_user.id, "Текущий IP сервера:")
+        bot.send_message(message.from_user.id, ip)
+    else:
+        bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
+
+
+@bot.message_handler(content_types=['document'])
+def handle_docs_audio(message):
+    file_id = message.document.file_id
+    file_info = bot.get_file(file_id)
+    file = get('https://api.telegram.org/file/bot{0}/{1}'.format(os.environ.get("TELEGRAM_KEY"), file_info.file_path))
+
+    savedFile = open('/app/torrent/' + message.document.file_name, 'wb')
+    savedFile.write(file.content)
+    savedFile.close()
+    bot.send_message(message.from_user.id, "Сохранён файл " + message.document.file_name)
+
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
@@ -48,47 +93,14 @@ def get_text_messages(message):
     if message.text.upper() == "ПРИВЕТ":
         bot.send_message(message.from_user.id, "Ohaio")
 
-    elif message.text == "/sub":
-        if message.from_user.id in pending_subs:
-            bot.send_message(message.from_user.id, "Для того, чтобы подписаться, введите пароль администратора")
-        elif message.from_user.id in subs:
-            bot.send_message(message.from_user.id, "Вы уже подписаны на обновления")
-        else:
-            bot.send_message(message.from_user.id, "Для того, чтобы подписаться, введите пароль администратора")
-            pending_subs.append(message.from_user.id)
-
-    elif message.text == "/subs":
-        if message.from_user.id in subs:
-            subs_string = ""
-            for i in subs:
-                UsrInfo = bot.get_chat_member(i, i).user
-                subs_string += str(i) + " - " + UsrInfo.username + "\n"
-            bot.send_message(message.from_user.id, subs_string)
-        else:
-            bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
-
     elif message.text == "/download":
         if message.from_user.id in subs:
-            #pendingTorrent[0] = True
+            # pendingTorrent[0] = True
             global pendingTorrent
             pendingTorrent = True
             bot.send_message(message.from_user.id, "Отправьте торрент файл или magnet ссылку")
         else:
             bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
-
-    elif message.text == "/ip":
-        if message.from_user.id in subs:
-            ip = get('https://api.ipify.org').text
-            bot.send_message(message.from_user.id, "Текущий IP сервера:")
-            bot.send_message(message.from_user.id, ip)
-        else:
-            bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
-
-    elif message.text == "/help":
-        bot.send_message(message.from_user.id, """/help  - Помощь
-/sub   - Подписаться
-/subs  - Список подписанных пользователей
-/ip    - Получить текущий IP сервера""")
 
     elif message.text == os.environ.get("ADMIN_PASSWORD"):
         if message.from_user.id in pending_subs or not (message.from_user.id in subs):
@@ -105,7 +117,6 @@ def get_text_messages(message):
             file.write(message.text)
             file.close()
             bot.send_message(message.from_user.id, "Файл: " + str(filename) + ".magnet")
-
 
     else:
         bot.send_message(message.from_user.id, "Не понимаю")
