@@ -76,14 +76,17 @@ def handle_ip(message):
 
 @bot.message_handler(content_types=['document'])
 def handle_docs_audio(message):
-    file_id = message.document.file_id
-    file_info = bot.get_file(file_id)
-    file = get('https://api.telegram.org/file/bot{0}/{1}'.format(os.environ.get("TELEGRAM_KEY"), file_info.file_path))
+    if message.from_user.id in subs:
+        file_id = message.document.file_id
+        file_info = bot.get_file(file_id)
+        file = get('https://api.telegram.org/file/bot{0}/{1}'.format(os.environ.get("TELEGRAM_KEY"), file_info.file_path))
 
-    savedFile = open('/app/torrent/' + message.document.file_name, 'wb')
-    savedFile.write(file.content)
-    savedFile.close()
-    bot.send_message(message.from_user.id, "Сохранён файл " + message.document.file_name)
+        savedFile = open('/app/torrent/' + message.document.file_name, 'wb')
+        savedFile.write(file.content)
+        savedFile.close()
+        bot.send_message(message.from_user.id, "Сохранён файл " + message.document.file_name)
+    else:
+        bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
 
 
 @bot.message_handler(content_types=['text'])
