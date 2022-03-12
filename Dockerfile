@@ -3,4 +3,5 @@ FROM orangenal/roombot-env
 COPY . /app
 #RUN pip install wakeonlan
 #RUN apt-get install etherwake
-ENTRYPOINT [ "/bin/bash", "/app/start.sh" ]
+#ENTRYPOINT [ "/bin/bash", "/app/start.sh" ]
+ENTRYPOINT [ "python3", "/app/code/bot.py" ]

@@ -1,14 +1,16 @@
 import os
+import random
+
 import telebot
 import json
 
 from requests import get
-from wakeonlan import send_magic_packet
-
 
 subs = []
 pending_subs = []
+#pendingTorrent = [False]
 
+pendingTorrent = False
 
 def cache_subs(a):
     json_note = ""
@@ -18,6 +20,7 @@ def cache_subs(a):
     file = open("/app/volume/subs.json", "w")
     file.write(json_note)
     file.close()
+
 
 def read_cache_subs(a):
     try:
@@ -33,17 +36,10 @@ def read_cache_subs(a):
         file.write("")
         file.close()
 
-    
-
 read_cache_subs(subs)
-print(subs)
-
-
+#print(subs)
 
 bot = telebot.TeleBot(os.environ.get("TELEGRAM_KEY"))
-
-
-
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
@@ -71,6 +67,15 @@ def get_text_messages(message):
         else:
             bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
 
+    elif message.text == "/download":
+        if message.from_user.id in subs:
+            #pendingTorrent[0] = True
+            global pendingTorrent
+            pendingTorrent = True
+            bot.send_message(message.from_user.id, "Отправьте торрент файл или magnet ссылку")
+        else:
+            bot.send_message(message.from_user.id, "Вы не являетесь подписчиком")
+
     elif message.text == "/ip":
         if message.from_user.id in subs:
             ip = get('https://api.ipify.org').text
@@ -82,18 +87,26 @@ def get_text_messages(message):
     elif message.text == "/help":
         bot.send_message(message.from_user.id, """/help  - Помощь
 /sub   - Подписаться
-/subs - Список подписанных пользователей
-/ip      - Получить текущий IP сервера""")
-
+/subs  - Список подписанных пользователей
+/ip    - Получить текущий IP сервера""")
 
     elif message.text == os.environ.get("ADMIN_PASSWORD"):
-        if message.from_user.id in pending_subs or not(message.from_user.id in subs):
+        if message.from_user.id in pending_subs or not (message.from_user.id in subs):
             subs.append(message.from_user.id)
             if message.from_user.id in pending_subs:
                 pending_subs.remove(message.from_user.id)
             bot.send_message(message.from_user.id, "Вы успешно подписаны на обновления")
             cache_subs(subs)
-        
+
+    elif "magnet" in message.text:
+        if message.from_user.id in subs:
+            filename = random.randint(1, 500)
+            file = open("/app/torrent/" + str(filename) + ".magnet", "w")
+            file.write(message.text)
+            file.close()
+            bot.send_message(message.from_user.id, "Файл: " + str(filename) + ".magnet")
+
+
     else:
         bot.send_message(message.from_user.id, "Не понимаю")
 
@@ -101,3 +114,4 @@ def get_text_messages(message):
 bot.infinity_polling()
 
 # bot.polling(none_stop=True, interval=0)
+# magnet:?xt=urn:btih:F38AD02AF844868888B4C37AB1FFC112DAE80F1D&tr=http%3A%2F%2Fbt.t-ru.org%2Fann%3Fmagnet&dn=Восемьдесят%20шесть%202%20(ТВ-1%2C%20часть%202)%20%2F%2086%20Part%202%20%2F%20Eighty%20Six%202nd%20Season%20%5BTV%2BSpecial%5D%20%5B1-10%2B2%20из%20%3E11%2B2%5D%20%5BБез%20хардсаба%5D%20%5BJAP%2BSub%5D%20%5B2021%2C%20экшен%2C%20драма%2C%20ф
